@@ -1,0 +1,6 @@
+debris_data.json
+.vs/
+x64/
+*.pdb
+Debug/
+json.hpp
