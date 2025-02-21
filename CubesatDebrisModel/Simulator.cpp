@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "VectorUtil.h"
+#include <vector>
 
 
 #define PI 3.1415926535
@@ -68,6 +69,7 @@ void Simulator::Run()
 
     DetectionCount = 0;
     int Steps = Duration / TimeStep;
+
 
     std::cout << "Start Simulation (steps=" << Steps << ")" << std::endl;
 

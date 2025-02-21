@@ -3,21 +3,15 @@
 
 #include <iostream>
 #include "Simulator.h"
-#include "DebrisDataGenerator.h"
+#include "DataManager.h"
 
 int main()
 {
-    DebrisDataGenerator dataGenerator;
-    dataGenerator.LoadData();
-
-    float* DebrisPosition;
-    float* DebrisVelocity;
-    int NumDebris;
-    dataGenerator.TakeData(DebrisPosition, DebrisVelocity, NumDebris);
-
+    DataManager dataGenerator;
+    DebrisList debrisList = dataGenerator.GetData();
 
     Simulator simulator;
-    simulator.SetDebris(DebrisPosition, DebrisVelocity, NumDebris);
+    simulator.SetDebris(debrisList);
     simulator.Run();
     std::cout << "Debris Detected: " << simulator.DetectionCount << std::endl;
 }
