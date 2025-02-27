@@ -4,3 +4,7 @@ x64/
 *.pdb
 Debug/
 json.hpp
+
+Libraries/
+
+CubesatDebrisModel/Raw Data/

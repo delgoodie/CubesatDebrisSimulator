@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cmath>
+#include <glm/glm.hpp>
+
 
 struct Debris {
     float Ecc = 0.f;
@@ -28,6 +31,10 @@ public:
     static void Add(float Target[3], float Source[3], float Addition[3]);
     static void Sub(float Vec[3], float Subtraction[3]);
     static void Sub(float Target[3], float Source[3], float Subtraction[3]);
+    static float Size(float Vector[3]);
+    static float Dot(float A[3], float B[3]);
+    static void Cross(float Out[3], float A[3], float B[3]);
+    static void Square(float Vector[3]);
 };
 
 
@@ -62,32 +69,38 @@ void COE_from_SV(float Position[3], float Velocity[3], float mu)
     User M - functions required : None
     */
 
+    float RA;
+    const float PI = 3.14159265;
 
 
-    float eps = 1.e-10;
 
-    float r = norm(R);
-    float v = norm(V);
 
-    float vr = dot(R, V) / r;
+    float eps = 1e-10;
+    float r = VectorUtil::Size(Position);
+    float v = VectorUtil::Size(Velocity);
 
-    float H = cross(R, V);
-    float h = norm(H);
+    float vr = VectorUtil::Dot(Position, Velocity) / r;
+
+    float H[3];
+    VectorUtil::Cross(H, Position, Velocity);
+    float h = VectorUtil::Size(H);
 
     // Equation 4.7:
-    float incl = acos(H(3) / h);
+    float incl = acos(H[2] / h);
 
     // Equation 4.8:
-    float N = cross([0 0 1], H);
-    float n = norm(N);
+    float ZAxis[3] = { 0.f, 0.f, 1.f };
+    float N[3];
+    VectorUtil::Cross(N, ZAxis, H);
+    float n = VectorUtil::Size(N);
 
     // Equation 4.9:
     if (n != 0)
     {
-        RA = acos(N(1) / n);
+        RA = acos(N[0] / n);
         if (N[2] < 0)
         {
-            RA = 2 * pi - RA;
+            RA = 2 * PI - RA;
         }
     }
     else
@@ -95,6 +108,7 @@ void COE_from_SV(float Position[3], float Velocity[3], float mu)
         RA = 0;
     }
 
+    /*
     // Equation 4.10:
     float E = 1 / mu * ((v ^ 2 - mu / r) * R - r * vr * V);
     float e = norm(E);
@@ -145,4 +159,6 @@ void COE_from_SV(float Position[3], float Velocity[3], float mu)
     // Equation 4.62 (a < 0 for a hyperbola) :
     a = h ^ 2 / mu / (1 - e ^ 2);
     coe = [h e RA incl w TA a];
+
+    */
 }

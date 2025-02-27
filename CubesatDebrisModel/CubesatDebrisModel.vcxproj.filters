@@ -24,7 +24,7 @@
     <ClCompile Include="VectorUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DebrisDataGenerator.cpp">
+    <ClCompile Include="DataManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,10 +35,10 @@
     <ClInclude Include="VectorUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DebrisDataGenerator.h">
+    <ClInclude Include="DataManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\Downloads\json.hpp">
+    <ClInclude Include="json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

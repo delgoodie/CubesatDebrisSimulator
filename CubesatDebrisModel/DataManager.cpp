@@ -5,7 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <filesystem>
-#include "json.hpp"
+#include <json/json.hpp>
 
 
 using json = nlohmann::json;
@@ -144,15 +144,17 @@ DebrisList DataManager::FetchLeoData_json(const char* FileName)
     }
     std::cout << NumTotal << "Total Objects" << std::endl;
 
-
-    DebrisPosition = (float*)malloc(sizeof(float) * NumDebris * 3);
-    DebrisVelocity = (float*)malloc(sizeof(float) * NumDebris * 3);
+    DebrisList DebrisList;
+    DebrisList.head = (Debris*)malloc(sizeof(Debris) * NumDebris);
+    DebrisList.num = NumDebris;
 
     int i = 0;
     for (auto orbitObj : jsonData["objects"])
     {
         if (orbitObj["type"] == "debris")
         {
+            /*
+            rv_to_coe
             DebrisPosition[i * 3 + 0] = (float)orbitObj["position"][0];
             DebrisPosition[i * 3 + 1] = (float)orbitObj["position"][1];
             DebrisPosition[i * 3 + 2] = (float)orbitObj["position"][2];
@@ -160,6 +162,7 @@ DebrisList DataManager::FetchLeoData_json(const char* FileName)
             DebrisVelocity[i * 3 + 0] = (float)orbitObj["velocity"][0];
             DebrisVelocity[i * 3 + 1] = (float)orbitObj["velocity"][1];
             DebrisVelocity[i * 3 + 2] = (float)orbitObj["velocity"][2];
+            */
             i++;
         }
     }
