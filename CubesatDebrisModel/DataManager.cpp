@@ -68,19 +68,19 @@ DebrisList DataManager::FetchMocatData_csv(const char* FileName)
         while (std::getline(ss, cell, ',')) {
             if (col == 12)
             {
-                debris.Ecc = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.e = std::stof(cell.substr(1, cell.length() - 2));
             }
             else if (col == 13) 
             {
-                debris.Inc = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.i = std::stof(cell.substr(1, cell.length() - 2));
             }
             else if (col == 14)
             {
-                debris.RA = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.o = std::stof(cell.substr(1, cell.length() - 2));
             }
             else if (col == 15)
             {
-                debris.AP = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.w = std::stof(cell.substr(1, cell.length() - 2));
             }
             else if (col == 16)
             {
@@ -95,16 +95,14 @@ DebrisList DataManager::FetchMocatData_csv(const char* FileName)
 
     file.close();
 
-
-    Debris* debrisArray = (Debris*)malloc(sizeof(Debris) * debrisVec.size());
-
-    for (int i = 0; i < debrisVec.size(); i++) {
-        debrisArray[i] = debrisVec[i];
-    }
-
     DebrisList debrisList;
-    debrisList.head = debrisArray;
+    debrisList.head = (Debris*)malloc(sizeof(Debris) * debrisVec.size());
     debrisList.num = debrisVec.size();
+
+    for (int i = 0; i < debrisVec.size(); i++) 
+    {
+        debrisList.head[i] = debrisVec[i];
+    }
 
     return debrisList;
 }
@@ -153,11 +151,8 @@ DebrisList DataManager::FetchLeoData_json(const char* FileName)
     {
         if (orbitObj["type"] == "debris")
         {
-            /*
-            rv_to_coe
-            DebrisPosition[i * 3 + 0] = (float)orbitObj["position"][0];
-            DebrisPosition[i * 3 + 1] = (float)orbitObj["position"][1];
-            DebrisPosition[i * 3 + 2] = (float)orbitObj["position"][2];
+            glm::vec3 pos = { (float)orbitObj["position"][0], (float)orbitObj["position"][1]; 3 + 0] =
+                (float)orbitObj["position"][2]; 3 + 1] =
 
             DebrisVelocity[i * 3 + 0] = (float)orbitObj["velocity"][0];
             DebrisVelocity[i * 3 + 1] = (float)orbitObj["velocity"][1];
@@ -183,8 +178,8 @@ DebrisList DataManager::FetchData_bin(const char* FileName)
 
     DebrisList debrisList;
 
-    debrisList.num = fileSize / sizeof(Debris);
-    debrisList.head = new Debris[debrisList.num]; // Allocate memory
+    debrisList.num = fileSize / sizeof(OrbitalCoordinates);
+    debrisList.head = new OrbitalCoordinates[debrisList.num]; // Allocate memory
 
     inFile.read(reinterpret_cast<char*>(debrisList.head), fileSize);
     inFile.close();
