@@ -147,16 +147,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cubesat.cpp" />
     <ClCompile Include="DataManager.cpp" />
     <ClCompile Include="CubesatDebrisModel.cpp" />
     <ClCompile Include="Simulator.cpp" />
-    <ClCompile Include="VectorUtil.cpp" />
+    <ClCompile Include="CapUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Cubesat.h" />
     <ClInclude Include="DataManager.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Simulator.h" />
-    <ClInclude Include="VectorUtil.h" />
+    <ClInclude Include="CapUtil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

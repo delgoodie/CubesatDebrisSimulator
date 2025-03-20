@@ -21,10 +21,13 @@
     <ClCompile Include="Simulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VectorUtil.cpp">
+    <ClCompile Include="CapUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DataManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cubesat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,13 +35,16 @@
     <ClInclude Include="Simulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VectorUtil.h">
+    <ClInclude Include="CapUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DataManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cubesat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

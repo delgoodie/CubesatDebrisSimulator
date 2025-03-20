@@ -1,87 +1,32 @@
-#include "VectorUtil.h"
+#include "CapUtil.h"
+#include <iostream>
 
 
-void VectorUtil::Copy(float Target[3], float Source[3])
+
+DebrisList::DebrisList(DebrisList&& other) noexcept
+    : head(std::move(other.head)), num(other.num)
 {
-    Target[0] = Source[0];
-    Target[1] = Source[1];
-    Target[2] = Source[2];
+    other.num = 0;
+    // std::cout << "DebrisList moved num = " << num << std::endl;
 }
 
-void VectorUtil::ScalarMultiply(float Vec[3], float Scalar)
+DebrisList::~DebrisList()
 {
-    Vec[0] *= Scalar;
-    Vec[1] *= Scalar;
-    Vec[2] *= Scalar;
-}
-
-void VectorUtil::ScalarMultiply(float Target[3], float Source[3], float Scalar)
-{
-    Target[0] = Source[0] * Scalar;
-    Target[1] = Source[1] * Scalar;
-    Target[2] = Source[2] * Scalar;
-}
-
-void VectorUtil::Add(float Vec[3], float Addition[3])
-{
-    Vec[0] += Addition[0];
-    Vec[1] += Addition[1];
-    Vec[2] += Addition[2];
-}
-
-void VectorUtil::Add(float Target[3], float Source[3], float Addition[3])
-{
-    Target[0] = Source[0] + Addition[0];
-    Target[1] = Source[1] + Addition[1];
-    Target[2] = Source[2] + Addition[2];
-}
-
-void VectorUtil::Sub(float Vec[3], float Subtraction[3])
-{
-    Vec[0] -= Subtraction[0];
-    Vec[1] -= Subtraction[1];
-    Vec[2] -= Subtraction[2];
-}
-
-void VectorUtil::Sub(float Target[3], float Source[3], float Subtraction[3])
-{
-    Target[0] = Source[0] - Subtraction[0];
-    Target[1] = Source[1] - Subtraction[1];
-    Target[2] = Source[2] - Subtraction[2];
-}
-
-float VectorUtil::Size(float Vector[3])
-{
-    return sqrt(Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2]);
-}
-
-float VectorUtil::Dot(float A[3], float B[3])
-{
-    return A[0]*B[0] + A[1]*B[1] + A[2]*B[2];
-}
-
-void VectorUtil::Cross(float Out[3], float A[3], float B[3])
-{
-    Out[0] = A[1] * B[2] - A[2] * B[1];
-    Out[1] = A[2] * B[0] - A[0] * B[2];
-    Out[2] = A[0] * B[1] - A[1] * B[0];
-}
-
-void VectorUtil::Square(float Vector[3])
-{
-    Vector[0] *= Vector[0];
-    Vector[1] *= Vector[1];
-    Vector[2] *= Vector[2];
+    if (num > 0)
+    {
+        std::cout << "~DebrisList num = " << num << std::endl;
+    }
 }
 
 
-float VectorUtil::TA_to_MA(float TA, float Ecc)
+
+float CapUtil::TA_to_MA(float TA, float Ecc)
 {
-    float E = 2 * atan(sqrt((1 - Ecc) / (1 + Ecc)) * tan(TA / 2);
+    float E = 2 * atan(sqrt((1 - Ecc) / (1 + Ecc)) * tan(TA / 2));
     return E - Ecc * sin(E);
 }
 
-float VectorUtil::MA_to_TA(float MA, float Ecc)
+float CapUtil::MA_to_TA(float MA, float Ecc)
 {
     const double TOLERANCE = 1e-6;
 
@@ -95,10 +40,10 @@ float VectorUtil::MA_to_TA(float MA, float Ecc)
         E -= delta;
     }
 
-    return 2.f * std::atan2(sqrt(1 + Ecc) * sin(E / 2), sqrt(1 - Ecc) * cos(E / 2));
+    return 2.f * float(std::atan2(sqrt(1 + Ecc) * sin(E / 2), sqrt(1 - Ecc) * cos(E / 2)));
 }
 
-CoordKep VectorUtil::CC_to_CK(const CoordCar& CC)
+CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
 {
     /*
     This function computes the classical orbital elements(coe)
@@ -131,18 +76,18 @@ CoordKep VectorUtil::CC_to_CK(const CoordCar& CC)
     CoordKep OC;
 
 
-    const float MU = 3.986004418e5; // km3/s2
-    const float PI = 3.14159265358979323846264;
+    const float MU = 3.986004418e5f; // km3/s2
+    const float PI = 3.14159265358979323846264f;
 
 
-    float eps = 1e-10;
-    float r = CC.pos.length();
-    float v = CC.vel.length();
+    float eps = 1e-10f;
+    float r = glm::length(CC.pos);
+    float v = glm::length(CC.vel);
 
     float vr = glm::dot(CC.pos, CC.vel) / r;
 
     glm::vec3 H = glm::cross(CC.pos, CC.vel);
-    float h = H.length();
+    float h = glm::length(H);
 
     // Equation 4.7:
     OC.i = acos(H.z / h);
@@ -150,7 +95,7 @@ CoordKep VectorUtil::CC_to_CK(const CoordCar& CC)
     // Equation 4.8:
     glm::vec3 ZAxis = { 0.f, 0.f, 1.f };
     glm::vec N = glm::cross(ZAxis, H);
-    float n = N.length();
+    float n = glm::length(N);
 
     // Equation 4.9:
     if (n != 0)
@@ -168,7 +113,7 @@ CoordKep VectorUtil::CC_to_CK(const CoordCar& CC)
 
     // Equation 4.10:
     glm::vec3 E = 1 / MU * ((v * v - MU / r) * CC.pos - r * vr * CC.vel);
-    OC.e = E.length();
+    OC.e = glm::length(E);
 
     // Equation 4.12 (incorporating the case e = 0) :
     if (n != 0)
@@ -226,10 +171,10 @@ CoordKep VectorUtil::CC_to_CK(const CoordCar& CC)
     return OC;
 }
 
-CoordCar VectorUtil::CK_to_CC(const CoordKep& CK)
+CoordCar CapUtil::CK_to_CC(const CoordKep& CK)
 {
-    const float MU = 3.986004418e5; // km3/s2
-    const float PI = 3.14159265358979323846264;
+    const float MU = 3.986004418e5f; // km3/s2
+    const float PI = 3.14159265358979323846264f;
     const double TOLERANCE = 1e-6; // Convergence tolerance for Kepler's equation
 
     CoordCar CC;
@@ -241,7 +186,7 @@ CoordCar VectorUtil::CK_to_CC(const CoordKep& CK)
         delta = (E - CK.e * sin(E) - CK.m) / (1 - CK.e* cos(E));
         E -= delta;
     }
-    float TA = 2.f * atan2(sqrt(1 + CK.e) * sin(E / 2), sqrt(1 - CK.e) * cos(E / 2));
+    float TA = 2.f * float( atan2(sqrt(1 + CK.e) * sin(E / 2), sqrt(1 - CK.e) * cos(E / 2)) );
     
     double r = CK.a * (1 - CK.e * CK.e) / (1 + CK.e * cos(TA));
 
@@ -264,14 +209,14 @@ CoordCar VectorUtil::CK_to_CC(const CoordKep& CK)
     double cosi = cos(CK.i), sini = sin(CK.i);
 
     // Position transformation
-    CC.pos.x = (cosO * coso - sinO * sino * cosi) * x_P + (-cosO * sino - sinO * coso * cosi) * y_P;
-    CC.pos.y = (sinO * coso + cosO * sino * cosi) * x_P + (-sinO * sino + cosO * coso * cosi) * y_P;
-    CC.pos.z = (sino * sini) * x_P + (coso * sini) * y_P;
+    CC.pos.x = float( (cosO * coso - sinO * sino * cosi) * x_P + (-cosO * sino - sinO * coso * cosi) * y_P );
+    CC.pos.y = float( (sinO * coso + cosO * sino * cosi) * x_P + (-sinO * sino + cosO * coso * cosi) * y_P );
+    CC.pos.z = float( (sino * sini) * x_P + (coso * sini) * y_P );
 
     // Velocity transformation
-    CC.vel.x = (cosO * coso - sinO * sino * cosi) * v_x + (-cosO * sino - sinO * coso * cosi) * v_y;
-    CC.vel.y = (sinO * coso + cosO * sino * cosi) * v_x + (-sinO * sino + cosO * coso * cosi) * v_y;
-    CC.vel.z = (sino * sini) * v_x + (coso * sini) * v_y;
+    CC.vel.x = float( (cosO * coso - sinO * sino * cosi) * v_x + (-cosO * sino - sinO * coso * cosi) * v_y );
+    CC.vel.y = float( (sinO * coso + cosO * sino * cosi) * v_x + (-sinO * sino + cosO * coso * cosi) * v_y );
+    CC.vel.z = float( (sino * sini) * v_x + (coso * sini) * v_y );
 
     return CC;
 }

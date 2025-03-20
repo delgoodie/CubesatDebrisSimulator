@@ -8,10 +8,9 @@
 int main()
 {
     DataManager dataGenerator;
-    DebrisList debrisList = dataGenerator.GetData();
 
     Simulator simulator;
-    simulator.SetDebris(debrisList);
+    simulator.SetDebris(std::move(dataGenerator.GetData()));
     simulator.Run();
     std::cout << "Debris Detected: " << simulator.DetectionCount << std::endl;
 }

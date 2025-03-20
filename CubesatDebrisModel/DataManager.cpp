@@ -13,17 +13,29 @@ using json = nlohmann::json;
 
 DebrisList DataManager::GetData()
 {
+    const bool bUseCachedFile = false;
+    const bool bWriteToCSV = true;
+
     const char* binDataFileName = "Raw Data/DebrisData2023.bin";
-
-    if (!std::filesystem::exists(binDataFileName))
+    const char* CSVDataFileName = "Raw Data/OutData.csv";
+    if (!bUseCachedFile || !std::filesystem::exists(binDataFileName))
     {
-        DebrisList debrisList = FetchMocatData_csv("Raw Data/2023.csv");
+        // DebrisList debrisList = FetchMocatData_csv("Raw Data/2023.csv");
+        DebrisList debrisList = FetchLeoData_json("Raw Data/debris_data.json");
 
-        WriteDataToBinFile(binDataFileName, debrisList);
+        if (bUseCachedFile)
+        {
+            WriteDataToBinFile(binDataFileName, debrisList);
+        }
 
-        delete(debrisList.head);
+        if (bWriteToCSV) 
+        {
+            WriteDataToCSV(CSVDataFileName, debrisList);
+        }
+
+
+        return debrisList;
     }
-
 
     DebrisList debrisList = FetchData_bin(binDataFileName);
 
@@ -31,15 +43,35 @@ DebrisList DataManager::GetData()
 }
 
 
-void DataManager::WriteDataToBinFile(const char* FileName, DebrisList debrisList)
+void DataManager::WriteDataToBinFile(const char* FileName, DebrisList& debrisList)
 {
     std::ofstream outFile(FileName, std::ios::binary);
     if (!outFile) {
         std::cerr << "Error opening file for writing!\n";
         return;
     }
-    outFile.write(reinterpret_cast<const char*>(debrisList.head), debrisList.num * sizeof(Debris));
+    outFile.write(reinterpret_cast<const char*>(debrisList.GetRawData()), debrisList.Num() * sizeof(Debris));
     outFile.close();
+}
+
+void DataManager::WriteDataToCSV(const char* FileName, DebrisList& debrisList)
+{
+    std::ofstream outFile(FileName);
+
+    if (!outFile) {
+        std::cerr << "Error opening file for writing!\n";
+        return;
+    }
+    
+    outFile << "a, e, i, o, w, m, rcs\n";
+
+    for (int i = 0; i < debrisList.Num(); i++) 
+    {
+        outFile << debrisList[i].coord.a << ", " << debrisList[i].coord.e << ", " << debrisList[i].coord.i << ", " << debrisList[i].coord.o << ", " << debrisList[i].coord.w << ", " << debrisList[i].coord.m << ", " << debrisList[i].rcs << "\n";
+    }
+
+    outFile.close();
+    std::cout << "CSV file written successfully!\n";
 }
 
 DebrisList DataManager::FetchMocatData_csv(const char* FileName)
@@ -47,7 +79,7 @@ DebrisList DataManager::FetchMocatData_csv(const char* FileName)
     std::ifstream file(FileName);
     if (!file.is_open()) {
         std::cerr << "Error opening file" << std::endl;
-        return;
+        return DebrisList();
     }
 
     std::vector<Debris> debrisVec;
@@ -72,21 +104,33 @@ DebrisList DataManager::FetchMocatData_csv(const char* FileName)
             }
             else if (col == 13) 
             {
-                debris.coord.i = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.i = CapUtil::Deg2Rad(std::stof(cell.substr(1, cell.length() - 2)));
             }
             else if (col == 14)
             {
-                debris.coord.o = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.o = CapUtil::Deg2Rad(std::stof(cell.substr(1, cell.length() - 2)));
             }
             else if (col == 15)
             {
-                debris.coord.w = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.w = CapUtil::Deg2Rad(std::stof(cell.substr(1, cell.length() - 2)));
             }
             else if (col == 16)
             {
-                debris.MA = std::stof(cell.substr(1, cell.length() - 2));
+                debris.coord.m = CapUtil::Deg2Rad(std::stof(cell.substr(1, cell.length() - 2)));
+            }
+            else if (col == 25)
+            {
+                debris.coord.a = std::stof(cell.substr(1, cell.length() - 2));
+            }
+            else if (col == 30)
+            {
+                std::string SizeStr = cell.substr(1, cell.length() - 2);
+                bool bIsLarge = SizeStr._Starts_with("L");
+                bool bIsMedium = SizeStr._Starts_with("M");
+                debris.rcs = bIsLarge ? 1.f : bIsMedium ? .5f : .1f;
                 break;
             }
+            debris.rcs = 0.f;
             col++;
         }
 
@@ -95,13 +139,11 @@ DebrisList DataManager::FetchMocatData_csv(const char* FileName)
 
     file.close();
 
-    DebrisList debrisList;
-    debrisList.head = (Debris*)malloc(sizeof(Debris) * debrisVec.size());
-    debrisList.num = debrisVec.size();
+    DebrisList debrisList(debrisVec.size());
 
     for (int i = 0; i < debrisVec.size(); i++) 
     {
-        debrisList.head[i] = debrisVec[i];
+        debrisList[i] = debrisVec[i];
     }
 
     return debrisList;
@@ -142,25 +184,22 @@ DebrisList DataManager::FetchLeoData_json(const char* FileName)
     }
     std::cout << NumTotal << "Total Objects" << std::endl;
 
-    DebrisList DebrisList;
-    DebrisList.head = (Debris*)malloc(sizeof(Debris) * NumDebris);
-    DebrisList.num = NumDebris;
+    DebrisList debrisList(NumDebris);
 
     int i = 0;
     for (auto orbitObj : jsonData["objects"])
     {
         if (orbitObj["type"] == "debris")
         {
-            glm::vec3 pos = { (float)orbitObj["position"][0], (float)orbitObj["position"][1]; 3 + 0] =
-                (float)orbitObj["position"][2]; 3 + 1] =
-
-            DebrisVelocity[i * 3 + 0] = (float)orbitObj["velocity"][0];
-            DebrisVelocity[i * 3 + 1] = (float)orbitObj["velocity"][1];
-            DebrisVelocity[i * 3 + 2] = (float)orbitObj["velocity"][2];
-            */
+            glm::vec3 pos = { (float)orbitObj["position"][0], (float)orbitObj["position"][1], (float)orbitObj["position"][2] };
+            glm::vec3 vel = { (float)orbitObj["velocity"][0], (float)orbitObj["velocity"][1], (float)orbitObj["velocity"][2] };
+            debrisList[i].coord = CapUtil::CC_to_CK({ pos, vel });
+            debrisList[i].rcs = 0;
             i++;
         }
     }
+
+    return debrisList;
 }
 
 DebrisList DataManager::FetchData_bin(const char* FileName)
@@ -168,7 +207,7 @@ DebrisList DataManager::FetchData_bin(const char* FileName)
     std::ifstream inFile(FileName, std::ios::binary);
     if (!inFile) {
         std::cerr << "Error opening file for reading!\n";
-        return {};
+        return DebrisList(0);
     }
 
     // Get file size
@@ -176,12 +215,9 @@ DebrisList DataManager::FetchData_bin(const char* FileName)
     size_t fileSize = inFile.tellg();
     inFile.seekg(0, std::ios::beg);
 
-    DebrisList debrisList;
+    DebrisList debrisList(fileSize / sizeof(Debris));
 
-    debrisList.num = fileSize / sizeof(OrbitalCoordinates);
-    debrisList.head = new OrbitalCoordinates[debrisList.num]; // Allocate memory
-
-    inFile.read(reinterpret_cast<char*>(debrisList.head), fileSize);
+    inFile.read(reinterpret_cast<char*>(debrisList.GetRawData()), fileSize);
     inFile.close();
 
     return debrisList;

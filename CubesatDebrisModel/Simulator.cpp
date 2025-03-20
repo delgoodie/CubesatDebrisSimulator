@@ -1,11 +1,11 @@
 #include "Simulator.h"
 
 #include <iostream>
-#include "VectorUtil.h"
+#include "CapUtil.h"
 #include <vector>
 
 
-#define PI 3.1415926535
+#define PI 3.1415926535f
 
 void PrintVec(float Vec[3])
 {
@@ -13,91 +13,75 @@ void PrintVec(float Vec[3])
 }
 
 
-void UpdateOrbitalBody(float Position[3], float Velocity[3], float GravitationalParameter, float TimeStep)
+void UpdateOrbitalBody(CoordCar& coord, float GravitationalParameter, float TimeStep)
 {
-    float PrevPosition[3];
-    VectorUtil::Copy(PrevPosition, Position);
+    glm::vec3 PrevPosition = coord.pos;
     
-    float Radius = sqrt(Position[0] * Position[0] + Position[1] * Position[1] + Position[2] * Position[2]);
+    float Radius = glm::length(coord.pos); // sqrt(Position[0] * Position[0] + Position[1] * Position[1] + Position[2] * Position[2]);
 
-
-    float Acceleration[3];
-    VectorUtil::ScalarMultiply(Acceleration, Position, -GravitationalParameter / (Radius * Radius * Radius) * TimeStep);
-    VectorUtil::Add(Velocity, Acceleration);
-    
-    float DeltaPosition[3];
-    VectorUtil::ScalarMultiply(DeltaPosition, Velocity, TimeStep);
-
-    VectorUtil::Add(Position, DeltaPosition);
+    glm::vec3 Acceleration = coord.pos * -GravitationalParameter / (Radius * Radius * Radius);
+    coord.vel += Acceleration * TimeStep;
+    coord.pos += coord.vel *TimeStep;
 
     // std::cout << PrevPosition[0] << ", " << PrevPosition[1] << ", " << PrevPosition[2] << " --> " << Position[0] << ", " << Position[1] << ", " << Position[2] << std::endl;
+}
+
+
+void UpdateOrbitalBody(CoordKep& coord, float GravitationalParameter, float TimeStep)
+{
+    coord.m += fmod(sqrt(GravitationalParameter / (coord.a * coord.a * coord.a)) * TimeStep, 2 * PI);
 }
 
 
 
 Simulator::Simulator()
 {
-	GravitationalParameter = 398600.4418;
+	GravitationalParameter = 398600.4418f;
     TimeStep = 1.f; // 1.f / 60.f;
 	Duration = 10 * 1;
-	FieldOfView = 60.f;
-	DetectionRange = 1;
-
-	CubesatPosition[0] = 2000.f;
-	CubesatPosition[1] = 0.f;
-	CubesatPosition[2] = 0.f;
-
-	CubesatVelocity[0] = 0.f;
-	CubesatVelocity[1] = 7.5f;
-	CubesatVelocity[2] = 0.f;
 
     DetectionCount = 0;
-
-    NumDebris = -1;
-    DebrisPosition = nullptr;
-    DebrisVelocity = nullptr;
 }
 
 
 void Simulator::Run()
 {
-    if (DebrisPosition == nullptr || DebrisVelocity == nullptr) 
+    if (debrisList.Num() == 0) 
     {
         std::cout << "Can't Run Simulation: Debris Position / Velocity unset" << std::endl;
         return;
     }
 
     DetectionCount = 0;
-    int Steps = Duration / TimeStep;
-
+    int Steps = int(Duration / TimeStep);
 
     std::cout << "Start Simulation (steps=" << Steps << ")" << std::endl;
 
     for (int i = 0; i < Steps; i++) 
     {
-        UpdateOrbitalBody(CubesatPosition, CubesatVelocity, GravitationalParameter, TimeStep);
+
+        UpdateOrbitalBody(cubesat.coord, GravitationalParameter, TimeStep);
+        glm::vec3 cubesatPos = CapUtil::CK_to_CC(cubesat.coord).pos;
+
         
-        for (int d = 0; d < NumDebris; d++)
+        for (int d = 0; d < debrisList.Num(); d++)
         {
             // if mod(i, floor(this.num_debris / 10)) == 0
             //    fprintf("Debris %d\n", i)
 
-            UpdateOrbitalBody(&DebrisPosition[d*3], &DebrisVelocity[d*3], GravitationalParameter, TimeStep);
+            UpdateOrbitalBody(debrisList[d].coord, GravitationalParameter, TimeStep);
 
+            glm::vec3 debrisPos = CapUtil::CK_to_CC(debrisList[i].coord).pos;
 
-            float Difference[3];
-            VectorUtil::Sub(Difference, &DebrisPosition[d*3], CubesatPosition);
+            glm::vec3 difference = cubesatPos - debrisPos;
 
-            float DistanceSquared = Difference[0] * Difference[0] + Difference[1] * Difference[1] + Difference[2] * Difference[2];
+            float DistanceSquared = glm::dot(difference, difference);
             // std::cout << DistanceSquared << std::endl;
-            bool bDetected = DistanceSquared < (DetectionRange * DetectionRange);
+            bool bDetected = DistanceSquared < (cubesat.DetectionRange * cubesat.DetectionRange);
 
             DetectionCount += bDetected;
         }
         std::cout << "Simulator Iteration" << std::endl;
     }
     std::cout << "Simulator Finished" << std::endl;
-
-    free(DebrisPosition);
-    free(DebrisVelocity);
 }
