@@ -31,7 +31,8 @@ struct Debris
 struct DebrisList {
 private:
     std::unique_ptr<Debris[]> head;
-    size_t num;
+public:
+    const size_t num;
 
 public:
     DebrisList() : head(nullptr), num(0) {}
@@ -46,8 +47,8 @@ public:
         if (this != &other)
         {
             head = std::move(other.head);
-            num = other.num;
-            other.num = 0;
+            *const_cast<size_t*>(&num) = other.num;
+            *const_cast<size_t*>(&other.num) = 0;
         }
         return *this;
     }
@@ -69,7 +70,6 @@ public:
 
     Debris* GetRawData() { return head.get(); }
 
-    int Num() { return static_cast<int>(num); }
     bool IsValid() { return num > 0 && head.get() != nullptr; }
 };
 
@@ -83,6 +83,8 @@ public:
 
     static CoordKep CC_to_CK(const CoordCar& CC);
     static CoordCar CK_to_CC(const CoordKep& CK);
+
+    static float MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB);
 
     static float Deg2Rad(const float& AngleDegrees) { return AngleDegrees * 3.1415926535f / 180.f; }
     static float Rad2Deg(const float& AngleRadians) { return AngleRadians * 180.f / 3.1415926535f; }

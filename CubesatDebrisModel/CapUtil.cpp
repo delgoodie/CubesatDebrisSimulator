@@ -6,7 +6,7 @@
 DebrisList::DebrisList(DebrisList&& other) noexcept
     : head(std::move(other.head)), num(other.num)
 {
-    other.num = 0;
+    *const_cast<size_t*>(&other.num) = 0;
     // std::cout << "DebrisList moved num = " << num << std::endl;
 }
 
@@ -219,4 +219,67 @@ CoordCar CapUtil::CK_to_CC(const CoordKep& CK)
     CC.vel.z = float( (sino * sini) * v_x + (coso * sini) * v_y );
 
     return CC;
+}
+
+
+
+
+float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB)
+{
+    const float PI = 3.14159265358979323846264f;
+
+    float best_mA = 0.f, best_mB = 0.f;
+    float minDistSqr = std::numeric_limits<float>::max();
+
+    std::vector<float> IterWindow = { 2.f * PI, PI / 6.f, PI / 10.f, PI / 50.f, PI / 80.f, PI / 120.f };
+
+    for (int Iter = 0; Iter < 6; Iter++)
+    {
+        float min_mA = best_mA - IterWindow[Iter] / 2.f;
+        float max_mA = best_mA + IterWindow[Iter] / 2.f;
+        float min_mB = best_mB - IterWindow[Iter] / 2.f;
+        float max_mB = best_mB + IterWindow[Iter] / 2.f;
+
+
+        const int samples = 16;
+        minDistSqr = std::numeric_limits<float>::max();
+
+        std::vector<std::tuple<glm::vec3, float>> pointsA;
+        for (int i = 0; i <= samples; ++i)
+        {
+            CoordKep sampleA = orbitA;
+            sampleA.m = min_mA + (max_mA - min_mA) * (float)i / (float)samples;
+            glm::vec3 posA = CapUtil::CK_to_CC(sampleA).pos;
+            pointsA.push_back({ posA, sampleA.m });
+            SamplesA.push_back(posA);
+        }
+        std::vector<std::tuple<glm::vec3, float>> pointsB;
+        for (int i = 0; i <= samples; ++i)
+        {
+            CoordKep sampleB = orbitB;
+            sampleB.m = min_mB + (max_mB - min_mB) * (float)i / (float)samples;
+            glm::vec3 posB = CapUtil::CK_to_CC(sampleB).pos;
+            pointsB.push_back({ posB, sampleB.m });
+            SamplesB.push_back(posB);
+        }
+
+        for (const std::tuple<glm::vec3, float>& posA : pointsA)
+        {
+            for (const std::tuple<glm::vec3, float>& posB : pointsB)
+            {
+                glm::vec3 dif = std::get<glm::vec3>(posA) - std::get<glm::vec3>(posB);
+                float distSqr = glm::dot(dif, dif);
+
+                if (distSqr < minDistSqr)
+                {
+                    minDistSqr = distSqr;
+                    best_mA = std::get<float>(posA);
+                    best_mB = std::get<float>(posB);
+                }
+            }
+        }
+
+        
+    }
+    return sqrt(minDistSqr);
 }

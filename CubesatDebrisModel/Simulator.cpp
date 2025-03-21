@@ -4,14 +4,7 @@
 #include "CapUtil.h"
 #include <vector>
 
-
 #define PI 3.1415926535f
-
-void PrintVec(float Vec[3])
-{
-    std::cout << Vec[0] << ", " << Vec[1] << ", " << Vec[2] << std::endl;
-}
-
 
 void UpdateOrbitalBody(CoordCar& coord, float GravitationalParameter, float TimeStep)
 {
@@ -44,9 +37,40 @@ Simulator::Simulator()
 }
 
 
+
+
+void Simulator::CullDebrisByMinDistance()
+{
+    int InitialSize = (int)debrisList.num;
+
+    std::vector<Debris> DebrisInRange;
+    DebrisInRange.reserve(debrisList.num / 5);
+    for (int i = 0; i < debrisList.num; i++) 
+    {
+        float MinDist = 0.f; // CapUtil::MinDistance(cubesat.coord, debrisList[i].coord);
+        if (MinDist <= cubesat.DetectionRange)
+        {
+            DebrisInRange.push_back(debrisList[i]);
+        }
+    }
+
+    debrisList = DebrisList(DebrisInRange.size());
+    for (int i = 0; i < DebrisInRange.size(); i++)
+    {
+        debrisList[i] = DebrisInRange[i];
+    }
+
+    int FinalSize = (int)debrisList.num;
+
+    std::cout << "Culled " << InitialSize - FinalSize << " debris out of " << InitialSize << " initial debris (" << (1.f - ((float)FinalSize / float(InitialSize))) * 100.f << "%)" << std::endl;
+}
+
 void Simulator::Run()
 {
-    if (debrisList.Num() == 0) 
+    CullDebrisByMinDistance();
+
+
+    if (debrisList.num == 0) 
     {
         std::cout << "Can't Run Simulation: Debris Position / Velocity unset" << std::endl;
         return;
@@ -64,7 +88,7 @@ void Simulator::Run()
         glm::vec3 cubesatPos = CapUtil::CK_to_CC(cubesat.coord).pos;
 
         
-        for (int d = 0; d < debrisList.Num(); d++)
+        for (int d = 0; d < debrisList.num; d++)
         {
             // if mod(i, floor(this.num_debris / 10)) == 0
             //    fprintf("Debris %d\n", i)

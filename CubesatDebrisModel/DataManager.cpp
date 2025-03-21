@@ -50,7 +50,7 @@ void DataManager::WriteDataToBinFile(const char* FileName, DebrisList& debrisLis
         std::cerr << "Error opening file for writing!\n";
         return;
     }
-    outFile.write(reinterpret_cast<const char*>(debrisList.GetRawData()), debrisList.Num() * sizeof(Debris));
+    outFile.write(reinterpret_cast<const char*>(debrisList.GetRawData()), debrisList.num * sizeof(Debris));
     outFile.close();
 }
 
@@ -65,7 +65,7 @@ void DataManager::WriteDataToCSV(const char* FileName, DebrisList& debrisList)
     
     outFile << "a, e, i, o, w, m, rcs\n";
 
-    for (int i = 0; i < debrisList.Num(); i++) 
+    for (int i = 0; i < debrisList.num; i++) 
     {
         outFile << debrisList[i].coord.a << ", " << debrisList[i].coord.e << ", " << debrisList[i].coord.i << ", " << debrisList[i].coord.o << ", " << debrisList[i].coord.w << ", " << debrisList[i].coord.m << ", " << debrisList[i].rcs << "\n";
     }
