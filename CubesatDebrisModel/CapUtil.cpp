@@ -231,9 +231,9 @@ float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::
     float best_mA = 0.f, best_mB = 0.f;
     float minDistSqr = std::numeric_limits<float>::max();
 
-    std::vector<float> IterWindow = { 2.f * PI, PI / 6.f, PI / 10.f, PI / 50.f, PI / 80.f, PI / 120.f };
+    std::vector<float> IterWindow = { 2.f * PI, PI / 6.f, PI / 60.f, PI / 200.f, PI / 800.f, PI / 1000.f, PI / 2000.f, PI / 15000.f, PI / 60000.f, PI / 300000.f };
 
-    for (int Iter = 0; Iter < 6; Iter++)
+    for (int Iter = 0; Iter < IterWindow.size(); Iter++)
     {
         float min_mA = best_mA - IterWindow[Iter] / 2.f;
         float max_mA = best_mA + IterWindow[Iter] / 2.f;
