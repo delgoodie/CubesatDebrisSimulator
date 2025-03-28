@@ -224,7 +224,8 @@ CoordCar CapUtil::CK_to_CC(const CoordKep& CK)
 
 
 
-float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB)
+// float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB)
+float CapUtil::MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKep& orbitB)
 {
     const float PI = 3.14159265358979323846264f;
 
@@ -251,7 +252,7 @@ float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::
             sampleA.m = min_mA + (max_mA - min_mA) * (float)i / (float)samples;
             glm::vec3 posA = CapUtil::CK_to_CC(sampleA).pos;
             pointsA.push_back({ posA, sampleA.m });
-            SamplesA.push_back(posA);
+            // SamplesA.push_back(posA);
         }
         std::vector<std::tuple<glm::vec3, float>> pointsB;
         for (int i = 0; i <= samples; ++i)
@@ -260,7 +261,7 @@ float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::
             sampleB.m = min_mB + (max_mB - min_mB) * (float)i / (float)samples;
             glm::vec3 posB = CapUtil::CK_to_CC(sampleB).pos;
             pointsB.push_back({ posB, sampleB.m });
-            SamplesB.push_back(posB);
+            // SamplesB.push_back(posB);
         }
 
         for (const std::tuple<glm::vec3, float>& posA : pointsA)

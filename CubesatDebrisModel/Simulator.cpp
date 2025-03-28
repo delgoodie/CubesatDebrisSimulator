@@ -41,14 +41,19 @@ Simulator::Simulator()
 
 void Simulator::CullDebrisByMinDistance()
 {
+    std::cout << "Culling debris by distance" << std::endl;
+
     int InitialSize = (int)debrisList.num;
 
     std::vector<Debris> DebrisInRange;
-    DebrisInRange.reserve(debrisList.num / 5);
     for (int i = 0; i < debrisList.num; i++) 
     {
-        float MinDist = 0.f; // CapUtil::MinDistance(cubesat.coord, debrisList[i].coord);
-        if (MinDist <= cubesat.DetectionRange)
+        if ((i % int(debrisList.num / 100)) == 0)
+        {
+            std::cout << i << "..." << std::endl;
+        }
+        float MinDist = CapUtil::MinDistanceBetweenEllipses(cubesat.coord, debrisList[i].coord);
+        if (MinDist <= cubesat.DetectionRange * 1.5f)
         {
             DebrisInRange.push_back(debrisList[i]);
         }

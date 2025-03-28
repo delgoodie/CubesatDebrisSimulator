@@ -16,9 +16,9 @@ float frand(float LO, float HI) {
     return  LO + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (HI - LO)));
 }
 
-int main()
+
+void TestMinDistanceAlgorithm() 
 {
-    // DataManager dataGenerator;
 
     float OverallMin = 0;
     CoordKep BestCoordA, BestCoordB;
@@ -26,7 +26,7 @@ int main()
     std::vector<glm::vec3> SamplesA;
     std::vector<glm::vec3> SamplesB;
 
-    for (int i = 0; i < 10000; i++) 
+    for (int i = 0; i < 10000; i++)
     {
         SamplesA.clear();
         SamplesB.clear();
@@ -34,10 +34,10 @@ int main()
         CoordKep CoordA = { 8000.f, 0.f, CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), 0.f };
         CoordKep CoordB = { 8000.f, 0.f, CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), 0.f };
 
-        float MinDist = CapUtil::MinDistance(
-            CoordA, CoordB,
-            SamplesA, 
-            SamplesB
+        float MinDist = CapUtil::MinDistanceBetweenEllipses(
+            CoordA, CoordB
+            // SamplesA,
+            // SamplesB
         );
         if (MinDist > OverallMin) {
             OverallMin = MinDist;
@@ -53,10 +53,10 @@ int main()
     std::cout << CapUtil::Rad2Deg(BestCoordB.i) << "  " << CapUtil::Rad2Deg(BestCoordB.o) << "  " << CapUtil::Rad2Deg(BestCoordB.w) << std::endl;
     SamplesA.clear();
     SamplesB.clear();
-    float MinDist2 = CapUtil::MinDistance(
-        BestCoordA, BestCoordB,
-        SamplesA,
-        SamplesB
+    float MinDist2 = CapUtil::MinDistanceBetweenEllipses(
+        BestCoordA, BestCoordB
+        // SamplesA,
+        // SamplesB
     );
 
 
@@ -76,11 +76,31 @@ int main()
     outFile.close();
     std::cout << "CSV file written successfully!\n";
 
+}
 
-    // Simulator simulator;
-    // simulator.SetDebris(std::move(dataGenerator.GetData()));
-    // simulator.Run();
-    // std::cout << "Debris Detected: " << simulator.DetectionCount << std::endl;
+int main()
+{
+    DataManager dataManager;
+
+    const char* binDataFileName = "Raw Data/DebrisData2023.bin";
+    const char* CSVDataFileName = "Raw Data/OutData.csv";
+    const char* LeoDataFileName = "Raw Data/debris_data.json";
+    const char* MocatDataFileName = "Raw Data/2023.csv";
+
+    // DebrisList debrisList = FetchData_bin(binDataFileName);
+
+    DebrisList debrisList = dataManager.GenData_Leo(2e5);
+    dataManager.WriteData_bin(binDataFileName, debrisList);
+
+    if (!dataManager.HasDataFile(binDataFileName))
+    {
+    }
+
+
+    Simulator simulator;
+    simulator.SetDebris(std::move(debrisList));
+    simulator.Run();
+    std::cout << "Debris Detected: " << simulator.DetectionCount << std::endl;
 
     return 0;
 }

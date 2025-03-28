@@ -84,7 +84,8 @@ public:
     static CoordKep CC_to_CK(const CoordCar& CC);
     static CoordCar CK_to_CC(const CoordKep& CK);
 
-    static float MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB);
+    // static float MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB);
+    static float MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKep& orbitB);
 
     static float Deg2Rad(const float& AngleDegrees) { return AngleDegrees * 3.1415926535f / 180.f; }
     static float Rad2Deg(const float& AngleRadians) { return AngleRadians * 180.f / 3.1415926535f; }
