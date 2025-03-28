@@ -25,8 +25,13 @@ public:
 
 public:
 	void SetDebris(DebrisList InDebrisList) { debrisList = std::move(InDebrisList); }
+
 	void CullDebrisByMinDistance();
 	void Run();
 
+
+	DebrisList& GetDebrisList() {
+		return debrisList;
+	}
 };
 

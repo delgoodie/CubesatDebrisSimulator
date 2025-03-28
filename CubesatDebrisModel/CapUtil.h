@@ -89,4 +89,10 @@ public:
 
     static float Deg2Rad(const float& AngleDegrees) { return AngleDegrees * 3.1415926535f / 180.f; }
     static float Rad2Deg(const float& AngleRadians) { return AngleRadians * 180.f / 3.1415926535f; }
+
+
+    static float FRand(float Min, float Max) 
+    {
+        return  Min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (Max - Min)));
+    }
 };

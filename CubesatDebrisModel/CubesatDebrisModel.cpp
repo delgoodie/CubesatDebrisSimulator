@@ -12,9 +12,6 @@
 #include <sstream>
 
 
-float frand(float LO, float HI) {
-    return  LO + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (HI - LO)));
-}
 
 
 void TestMinDistanceAlgorithm() 
@@ -31,8 +28,8 @@ void TestMinDistanceAlgorithm()
         SamplesA.clear();
         SamplesB.clear();
 
-        CoordKep CoordA = { 8000.f, 0.f, CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), 0.f };
-        CoordKep CoordB = { 8000.f, 0.f, CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), CapUtil::Deg2Rad(frand(0.f, 90.f)), 0.f };
+        CoordKep CoordA = { 8000.f, 0.f, CapUtil::Deg2Rad(CapUtil::FRand(0.f, 90.f)), CapUtil::Deg2Rad(CapUtil::FRand(0.f, 90.f)), CapUtil::Deg2Rad(CapUtil::FRand(0.f, 90.f)), 0.f };
+        CoordKep CoordB = { 8000.f, 0.f, CapUtil::Deg2Rad(CapUtil::FRand(0.f, 90.f)), CapUtil::Deg2Rad(CapUtil::FRand(0.f, 90.f)), CapUtil::Deg2Rad(CapUtil::FRand(0.f, 90.f)), 0.f };
 
         float MinDist = CapUtil::MinDistanceBetweenEllipses(
             CoordA, CoordB
@@ -87,20 +84,29 @@ int main()
     const char* LeoDataFileName = "Raw Data/debris_data.json";
     const char* MocatDataFileName = "Raw Data/2023.csv";
 
+    const char* culledCsvDataFileName = "Raw Data/CulledData.csv";
+    const char* culledBinDataFileName = "Raw Data/CulledData.bin";
+
+
     // DebrisList debrisList = FetchData_bin(binDataFileName);
 
-    DebrisList debrisList = dataManager.GenData_Leo(2e5);
+    DebrisList debrisList = dataManager.GenData_Leo(120e6);
     dataManager.WriteData_bin(binDataFileName, debrisList);
-
-    if (!dataManager.HasDataFile(binDataFileName))
-    {
-    }
-
 
     Simulator simulator;
     simulator.SetDebris(std::move(debrisList));
-    simulator.Run();
-    std::cout << "Debris Detected: " << simulator.DetectionCount << std::endl;
+    simulator.CullDebrisByMinDistance();
+    dataManager.WriteData_bin(culledBinDataFileName, simulator.GetDebrisList());
+    dataManager.WriteData_csv(culledCsvDataFileName, simulator.GetDebrisList());
+
+
+
+    // if (!dataManager.HasDataFile(binDataFileName))
+    // {
+    // }
+
+    // simulator.Run();
+    // std::cout << "Debris Detected: " << simulator.DetectionCount << std::endl;
 
     return 0;
 }
