@@ -11,6 +11,7 @@ public:
 	DebrisList FetchMocatData_csv(const char* FileName);
 	DebrisList FetchLeoData_json(const char* FileName);
 	DebrisList FetchData_bin(const char* FileName);
+	DebrisList FetchData_csv(const char* FileName);
 	DebrisList GenData_Leo(int Num);
 	bool HasDataFile(const char* FileName);
 };

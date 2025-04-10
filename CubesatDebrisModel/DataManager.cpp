@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <json/json.hpp>
 #include <random>
+#include <cmath>
+#include <regex>
 
 using json = nlohmann::json;
 
@@ -14,7 +16,8 @@ using json = nlohmann::json;
 void DataManager::WriteData_bin(const char* FileName, DebrisList& debrisList)
 {
     std::ofstream outFile(FileName, std::ios::binary);
-    if (!outFile) {
+    if (!outFile) 
+    {
         std::cerr << "Error opening file for writing!\n";
         return;
     }
@@ -95,10 +98,10 @@ DebrisList DataManager::FetchMocatData_csv(const char* FileName)
                 std::string SizeStr = cell.substr(1, cell.length() - 2);
                 bool bIsLarge = SizeStr._Starts_with("L");
                 bool bIsMedium = SizeStr._Starts_with("M");
-                debris.rcs = bIsLarge ? 1.f : bIsMedium ? .5f : .1f;
+                debris.rcs = bIsLarge ? 1. : bIsMedium ? .5 : .1;
                 break;
             }
-            debris.rcs = 0.f;
+            debris.rcs = 0.;
             col++;
         }
 
@@ -159,8 +162,8 @@ DebrisList DataManager::FetchLeoData_json(const char* FileName)
     {
         if (orbitObj["type"] == "debris")
         {
-            glm::vec3 pos = { (float)orbitObj["position"][0], (float)orbitObj["position"][1], (float)orbitObj["position"][2] };
-            glm::vec3 vel = { (float)orbitObj["velocity"][0], (float)orbitObj["velocity"][1], (float)orbitObj["velocity"][2] };
+            vec3 pos = { (double)orbitObj["position"][0], (double)orbitObj["position"][1], (double)orbitObj["position"][2] };
+            vec3 vel = { (double)orbitObj["velocity"][0], (double)orbitObj["velocity"][1], (double)orbitObj["velocity"][2] };
             debrisList[i].coord = CapUtil::CC_to_CK({ pos, vel });
             debrisList[i].rcs = 0;
             i++;
@@ -184,9 +187,94 @@ DebrisList DataManager::FetchData_bin(const char* FileName)
     inFile.seekg(0, std::ios::beg);
 
     DebrisList debrisList(fileSize / sizeof(Debris));
-
     inFile.read(reinterpret_cast<char*>(debrisList.GetRawData()), fileSize);
     inFile.close();
+
+
+    /*
+    int Num = fileSize / sizeof(DebrisF);
+    DebrisF* debrisListF = (DebrisF*)malloc(Num);
+    inFile.read(reinterpret_cast<char*>(debrisListF), fileSize);
+    inFile.close();
+
+    DebrisList debrisList(Num);
+    for (int i = 0; i < Num; i++) {
+        debrisList[i].coord.a = debrisListF[i].coord.a;
+        debrisList[i].coord.e = debrisListF[i].coord.e;
+        debrisList[i].coord.i = debrisListF[i].coord.i;
+        debrisList[i].coord.o = debrisListF[i].coord.o;
+        debrisList[i].coord.w = debrisListF[i].coord.w;
+        debrisList[i].coord.m = debrisListF[i].coord.m;
+        debrisList[i].rcs = debrisListF[i].rcs;
+    }
+    */
+    return debrisList;
+}
+
+DebrisList DataManager::FetchData_csv(const char* FileName)
+{
+    std::ifstream file(FileName);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file" << std::endl;
+        return DebrisList();
+    }
+
+    std::vector<Debris> debrisVec;
+
+    std::string line;
+    int LineNumber = -1;
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string cell;
+
+        LineNumber++;
+
+        if (LineNumber == 0) continue;
+
+        Debris debris;
+
+        int col = 0;
+        while (std::getline(ss, cell, ',')) 
+        {
+            /*
+            std::regex number_regex("-*\d*\.*\d*");
+            auto words_begin = std::sregex_iterator(cell.begin(), cell.end(), number_regex);
+            auto words_end = std::sregex_iterator();
+
+            double Value = 0;
+            for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+            {
+                std::smatch match = *i;
+                std::string match_str = match.str();
+                Value = std::stod(match_str);
+                break;
+            }
+            */
+
+            double Value = std::stod(cell);
+
+            if (col == 0) debris.coord.a = Value;
+            else if (col == 1) debris.coord.e = Value;
+            else if (col == 2) debris.coord.i = Value;
+            else if (col == 3) debris.coord.o = Value;
+            else if (col == 4) debris.coord.w = Value;
+            else if (col == 5) debris.coord.m = Value;
+            else if (col == 6) debris.rcs = Value;
+
+            col++;
+        }
+
+        debrisVec.push_back(debris);
+    }
+
+    file.close();
+
+    DebrisList debrisList(debrisVec.size());
+
+    for (int i = 0; i < debrisVec.size(); i++)
+    {
+        debrisList[i] = debrisVec[i];
+    }
 
     return debrisList;
 }
@@ -196,10 +284,10 @@ double GetRandomFromHist(double start, double step, int* Hist, int Num, int Rand
 {
     for (int i = 0; i < Num; i++) 
     {
-        if (RandValue <= Hist[i]) return start + i * step + CapUtil::FRand(-step / 2.f, step / 2.f);
+        if (RandValue <= Hist[i]) return start + i * step + CapUtil::FRand(-step / 2., step / 2.);
     }
 
-    return start + Num * step + CapUtil::FRand(-step / 2.f, step / 2.f);
+    return start + Num * step + CapUtil::FRand(-step / 2., step / 2.);
 
 }
 

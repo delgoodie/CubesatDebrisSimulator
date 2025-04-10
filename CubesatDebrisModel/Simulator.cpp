@@ -4,15 +4,15 @@
 #include "CapUtil.h"
 #include <vector>
 
-#define PI 3.1415926535f
+#define PI 3.1415926535
 
-void UpdateOrbitalBody(CoordCar& coord, float GravitationalParameter, float TimeStep)
+void UpdateOrbitalBody(CoordCar& coord, double GravitationalParameter, double TimeStep)
 {
-    glm::vec3 PrevPosition = coord.pos;
+    vec3 PrevPosition = coord.pos;
     
-    float Radius = glm::length(coord.pos); // sqrt(Position[0] * Position[0] + Position[1] * Position[1] + Position[2] * Position[2]);
+    double Radius = glm::length(coord.pos); // sqrt(Position[0] * Position[0] + Position[1] * Position[1] + Position[2] * Position[2]);
 
-    glm::vec3 Acceleration = coord.pos * -GravitationalParameter / (Radius * Radius * Radius);
+    vec3 Acceleration = coord.pos * -GravitationalParameter / (Radius * Radius * Radius);
     coord.vel += Acceleration * TimeStep;
     coord.pos += coord.vel *TimeStep;
 
@@ -20,18 +20,18 @@ void UpdateOrbitalBody(CoordCar& coord, float GravitationalParameter, float Time
 }
 
 
-void UpdateOrbitalBody(CoordKep& coord, float GravitationalParameter, float TimeStep)
+void UpdateOrbitalBody(CoordKep& coord, double GravitationalParameter, double TimeStep)
 {
-    coord.m += fmod(sqrt(GravitationalParameter / (coord.a * coord.a * coord.a)) * TimeStep, 2 * PI);
+    coord.m = fmod(coord.m + sqrt(GravitationalParameter / (coord.a * coord.a * coord.a)) * TimeStep, 2 * PI);
 }
 
 
 
 Simulator::Simulator()
 {
-	GravitationalParameter = 398600.4418f;
-    TimeStep = 1.f; // 1.f / 60.f;
-	Duration = 10 * 1;
+	GravitationalParameter = 398600.4418;
+    TimeStep = .1; // 1. / 60.;
+	Duration = 100 * 1;
 
     DetectionCount = 0;
 }
@@ -52,8 +52,8 @@ void Simulator::CullDebrisByMinDistance()
         {
             std::cout << i << "..." << std::endl;
         }
-        float MinDist = CapUtil::MinDistanceBetweenEllipses(cubesat.coord, debrisList[i].coord);
-        if (MinDist <= cubesat.DetectionRange * 1.5f)
+        double MinDist = CapUtil::MinDistanceBetweenEllipses(cubesat.coord, debrisList[i].coord);
+        if (MinDist <= cubesat.DetectionRange * 1.5)
         {
             DebrisInRange.push_back(debrisList[i]);
         }
@@ -67,12 +67,12 @@ void Simulator::CullDebrisByMinDistance()
 
     int FinalSize = (int)debrisList.num;
 
-    std::cout << "Culled " << InitialSize - FinalSize << " debris out of " << InitialSize << " initial debris (" << (1.f - ((float)FinalSize / float(InitialSize))) * 100.f << "%)" << std::endl;
+    std::cout << "Culled " << InitialSize - FinalSize << " debris out of " << InitialSize << " initial debris (" << (1. - ((double)FinalSize / double(InitialSize))) * 100. << "%)" << std::endl;
 }
 
 void Simulator::Run()
 {
-    CullDebrisByMinDistance();
+    // CullDebrisByMinDistance();
 
 
     if (debrisList.num == 0) 
@@ -81,16 +81,81 @@ void Simulator::Run()
         return;
     }
 
-    DetectionCount = 0;
-    int Steps = int(Duration / TimeStep);
+    // DetectionCount = 0;
+    // int Steps = int(Duration / TimeStep);
+    // std::cout << "Start Simulation (steps=" << Steps << ")" << std::endl;
+    
+    for (int i = 0; i < debrisList.num; i++) 
+    {
+        if ((i % (debrisList.num / 100)) == 0)
+        {
+            std::cout << "debris " << i << std::endl;
+        }
 
-    std::cout << "Start Simulation (steps=" << Steps << ")" << std::endl;
+        CoordKep dbInitial = debrisList[i].coord;
+        CoordKep db = debrisList[i].coord;
+        CoordKep cs = cubesat.coord;
+        double mOffset = db.m;
 
+        bool bDetected = false;
+        for (double acc_m = 0.; acc_m < 2 * PI;)
+        {
+            double prev_m = cs.m;
+
+            CoordCar dcc = CapUtil::CK_to_CC(db);
+            CoordCar csc = CapUtil::CK_to_CC(cs);
+
+            // CoordKep dck = CapUtil::CC_to_CK(dbc);
+            // CoordKep csk = CapUtil::CC_to_CK(csc);
+
+            
+            double OuterRange = 100.0;
+            double OuterTimeStep = 5.;
+            double InnerTimeStep = .001;
+
+            double distance = glm::distance(dcc.pos, csc.pos);
+            if (distance > OuterRange)
+            {
+                UpdateOrbitalBody(db, GravitationalParameter, OuterTimeStep);
+                UpdateOrbitalBody(cs, GravitationalParameter, OuterTimeStep);
+            }
+            else if (distance > cubesat.DetectionRange * 2)
+            {
+                double alpha = (distance - cubesat.DetectionRange * 2.) / (OuterRange - cubesat.DetectionRange * 2.);
+                double timestep = (OuterTimeStep / 2.0 - InnerTimeStep) * alpha + InnerTimeStep;
+                UpdateOrbitalBody(db, GravitationalParameter, timestep);
+                UpdateOrbitalBody(cs, GravitationalParameter, timestep);
+            }
+            else
+            {
+                if (distance > cubesat.DetectionRange)
+                {
+                    std::cout << "DETECTED --- " << i << std::endl;
+                    DetectionCount++;
+                    bDetected = true;
+                    break;
+                }
+
+                UpdateOrbitalBody(db, GravitationalParameter, InnerTimeStep);
+                UpdateOrbitalBody(cs, GravitationalParameter, InnerTimeStep);
+            }
+
+            double delta_m = cs.m - prev_m;
+            if (delta_m > PI) delta_m = 2. * PI - delta_m;
+            acc_m += abs(delta_m);
+        }
+    }
+
+    /*
     for (int i = 0; i < Steps; i++) 
     {
+        if (i % (Steps / 100) == 0)
+        {
+            std::cout << "Iter " << i << std::endl;
+        }
 
         UpdateOrbitalBody(cubesat.coord, GravitationalParameter, TimeStep);
-        glm::vec3 cubesatPos = CapUtil::CK_to_CC(cubesat.coord).pos;
+        vec3 cubesatPos = CapUtil::CK_to_CC(cubesat.coord).pos;
 
         
         for (int d = 0; d < debrisList.num; d++)
@@ -100,17 +165,17 @@ void Simulator::Run()
 
             UpdateOrbitalBody(debrisList[d].coord, GravitationalParameter, TimeStep);
 
-            glm::vec3 debrisPos = CapUtil::CK_to_CC(debrisList[i].coord).pos;
+            vec3 debrisPos = CapUtil::CK_to_CC(debrisList[i].coord).pos;
 
-            glm::vec3 difference = cubesatPos - debrisPos;
+            vec3 difference = cubesatPos - debrisPos;
 
-            float DistanceSquared = glm::dot(difference, difference);
+            double DistanceSquared = glm::dot(difference, difference);
             // std::cout << DistanceSquared << std::endl;
             bool bDetected = DistanceSquared < (cubesat.DetectionRange * cubesat.DetectionRange);
 
             DetectionCount += bDetected;
         }
-        std::cout << "Simulator Iteration" << std::endl;
     }
+    */
     std::cout << "Simulator Finished" << std::endl;
 }

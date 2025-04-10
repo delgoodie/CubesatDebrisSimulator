@@ -2,9 +2,9 @@
 
 Cubesat::Cubesat()
 {
-	FieldOfView = 60.f;
+	FieldOfView = 60.;
 	DetectionRange = 1;
 
 	coord = { 6928, 0, CapUtil::Deg2Rad(37.556), CapUtil::Deg2Rad(200), 0, 0 };
-	// CapUtil::CC_to_CK({ glm::vec3(2000.f, 0.f, 0.f), glm::vec3(0.f, 7.5f, 0.f) });
+	// CapUtil::CC_to_CK({ vec3(2000., 0., 0.), vec3(0., 7.5, 0.) });
 }

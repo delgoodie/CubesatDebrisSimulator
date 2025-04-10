@@ -10,9 +10,9 @@ private:
 	Cubesat cubesat;
 	DebrisList debrisList;
 	
-	float GravitationalParameter; // (mu) km3/s2
-	float TimeStep; // s
-	float Duration; // s
+	double GravitationalParameter; // (mu) km3/s2
+	double TimeStep; // s
+	double Duration; // s
 
 
 

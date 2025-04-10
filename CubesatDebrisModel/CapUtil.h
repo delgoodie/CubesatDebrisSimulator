@@ -4,27 +4,53 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
+
+typedef glm::highp_dvec3 vec3;
+
 struct CoordKep {
-    float a = 0.f;
-    float e = 0.f;
-    float i = 0.f;
-    float o = 0.f;
-    float w = 0.f;
-    float m = 0.f;
+    double a = 0;
+    double e = 0;
+    double i = 0;
+    double o = 0;
+    double w = 0;
+    double m = 0;
+
+    bool Equals(const CoordKep& Other) 
+    {
+        return abs(a - Other.a) < .001 && abs(e - Other.e) < .0001 && abs(i - Other.i) < .0001 && abs(o - Other.o) < .0001 && abs(w - Other.w) < .0001 && abs(m - Other.m) < .0001;
+    }
+};
+
+
+struct CoordKepF {
+    float a = 0;
+    float e = 0;
+    float i = 0;
+    float o = 0;
+    float w = 0;
+    float m = 0;
 };
 
 struct CoordCar
 {
-    glm::vec3 pos;
-    glm::vec3 vel;
+    vec3 pos;
+    vec3 vel;
 };
 
 
 struct Debris
 {
     CoordKep coord;
+    double rcs;
+};
+
+
+struct DebrisF
+{
+    CoordKepF coord;
     float rcs;
 };
+
 
 
 
@@ -77,22 +103,24 @@ public:
 class CapUtil
 {
 public:
-    static float TA_to_MA(float TA, float Ecc);
-    static float MA_to_TA(float MA, float Ecc);
+    static double TA_to_MA(double TA, double Ecc);
+    static double MA_to_TA(double MA, double Ecc);
 
 
     static CoordKep CC_to_CK(const CoordCar& CC);
     static CoordCar CK_to_CC(const CoordKep& CK);
 
-    // static float MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB);
-    static float MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKep& orbitB);
 
-    static float Deg2Rad(const float& AngleDegrees) { return AngleDegrees * 3.1415926535f / 180.f; }
-    static float Rad2Deg(const float& AngleRadians) { return AngleRadians * 180.f / 3.1415926535f; }
+    static void TestMinDistanceAlgorithm();
+    // static double MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<vec3>& SamplesA, std::vector<vec3>& SamplesB);
+    static double MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKep& orbitB);
+
+    static double Deg2Rad(const double& AngleDegrees) { return AngleDegrees * 3.1415926535 / 180.; }
+    static double Rad2Deg(const double& AngleRadians) { return AngleRadians * 180. / 3.1415926535; }
 
 
-    static float FRand(float Min, float Max) 
+    static double FRand(double Min, double Max) 
     {
-        return  Min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (Max - Min)));
+        return  Min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX / (Max - Min)));
     }
 };

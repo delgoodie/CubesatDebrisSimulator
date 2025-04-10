@@ -5,8 +5,8 @@
 class Cubesat
 {
 public:
-	float FieldOfView; // degrees
-	float DetectionRange; // km
+	double FieldOfView; // degrees
+	double DetectionRange; // km
 	
 	CoordKep coord;
 

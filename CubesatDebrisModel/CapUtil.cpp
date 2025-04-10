@@ -1,6 +1,9 @@
 #include "CapUtil.h"
 #include <iostream>
-
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
 
 
 DebrisList::DebrisList(DebrisList&& other) noexcept
@@ -20,13 +23,13 @@ DebrisList::~DebrisList()
 
 
 
-float CapUtil::TA_to_MA(float TA, float Ecc)
+double CapUtil::TA_to_MA(double TA, double Ecc)
 {
-    float E = 2 * atan(sqrt((1 - Ecc) / (1 + Ecc)) * tan(TA / 2));
+    double E = 2 * atan(sqrt((1 - Ecc) / (1 + Ecc)) * tan(TA / 2));
     return E - Ecc * sin(E);
 }
 
-float CapUtil::MA_to_TA(float MA, float Ecc)
+double CapUtil::MA_to_TA(double MA, double Ecc)
 {
     const double TOLERANCE = 1e-6;
 
@@ -40,7 +43,7 @@ float CapUtil::MA_to_TA(float MA, float Ecc)
         E -= delta;
     }
 
-    return 2.f * float(std::atan2(sqrt(1 + Ecc) * sin(E / 2), sqrt(1 - Ecc) * cos(E / 2)));
+    return 2. * double(std::atan2(sqrt(1 + Ecc) * sin(E / 2), sqrt(1 - Ecc) * cos(E / 2)));
 }
 
 CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
@@ -76,26 +79,26 @@ CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
     CoordKep OC;
 
 
-    const float MU = 3.986004418e5f; // km3/s2
-    const float PI = 3.14159265358979323846264f;
+    const double MU = 3.986004418e5f; // km3/s2
+    const double PI = 3.14159265358979323846264;
 
 
-    float eps = 1e-10f;
-    float r = glm::length(CC.pos);
-    float v = glm::length(CC.vel);
+    double eps = 1e-10f;
+    double r = glm::length(CC.pos);
+    double v = glm::length(CC.vel);
 
-    float vr = glm::dot(CC.pos, CC.vel) / r;
+    double vr = glm::dot(CC.pos, CC.vel) / r;
 
-    glm::vec3 H = glm::cross(CC.pos, CC.vel);
-    float h = glm::length(H);
+    vec3 H = glm::cross(CC.pos, CC.vel);
+    double h = glm::length(H);
 
     // Equation 4.7:
     OC.i = acos(H.z / h);
 
     // Equation 4.8:
-    glm::vec3 ZAxis = { 0.f, 0.f, 1.f };
+    vec3 ZAxis = { 0., 0., 1. };
     glm::vec N = glm::cross(ZAxis, H);
-    float n = glm::length(N);
+    double n = glm::length(N);
 
     // Equation 4.9:
     if (n != 0)
@@ -112,7 +115,7 @@ CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
     }
 
     // Equation 4.10:
-    glm::vec3 E = 1 / MU * ((v * v - MU / r) * CC.pos - r * vr * CC.vel);
+    vec3 E = 1 / MU * ((v * v - MU / r) * CC.pos - r * vr * CC.vel);
     OC.e = glm::length(E);
 
     // Equation 4.12 (incorporating the case e = 0) :
@@ -124,7 +127,7 @@ CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
             OC.w = acos(dot(N, E) / n / OC.e);
             if (E.z < 0)
             {
-                OC.w = 2.f * PI - OC.w;
+                OC.w = 2. * PI - OC.w;
             }
         }
         else
@@ -139,7 +142,7 @@ CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
 
 
     // Equation 4.13a(incorporating the case e = 0)
-    float TA;
+    double TA;
     if (OC.e > eps)
     {
         TA = acos(glm::dot(E, CC.pos) / OC.e / r);
@@ -150,7 +153,7 @@ CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
     }
     else
     {
-        glm::vec3 cp = glm::cross(N, CC.pos);
+        vec3 cp = glm::cross(N, CC.pos);
         if (cp.z >= 0)
         {
             TA = acos(glm::dot(N, CC.pos) / n / r);
@@ -173,11 +176,20 @@ CoordKep CapUtil::CC_to_CK(const CoordCar& CC)
 
 CoordCar CapUtil::CK_to_CC(const CoordKep& CK)
 {
-    const float MU = 3.986004418e5f; // km3/s2
-    const float PI = 3.14159265358979323846264f;
+    const double MU = 3.986004418e5f; // km3/s2
+    const double PI = 3.14159265358979323846264;
     const double TOLERANCE = 1e-6; // Convergence tolerance for Kepler's equation
 
     CoordCar CC;
+
+    if (CK.e > 1) 
+    {
+        std::cout << "HELP" << std::endl;
+    }
+
+
+    assert(CK.e <= 1);
+    if (CK.e > 1) return {};
 
     double E = CK.m;
     double delta = 1.0;
@@ -186,7 +198,7 @@ CoordCar CapUtil::CK_to_CC(const CoordKep& CK)
         delta = (E - CK.e * sin(E) - CK.m) / (1 - CK.e* cos(E));
         E -= delta;
     }
-    float TA = 2.f * float( atan2(sqrt(1 + CK.e) * sin(E / 2), sqrt(1 - CK.e) * cos(E / 2)) );
+    double TA = 2. * double( atan2(sqrt(1 + CK.e) * sin(E / 2), sqrt(1 - CK.e) * cos(E / 2)) );
     
     double r = CK.a * (1 - CK.e * CK.e) / (1 + CK.e * cos(TA));
 
@@ -209,73 +221,132 @@ CoordCar CapUtil::CK_to_CC(const CoordKep& CK)
     double cosi = cos(CK.i), sini = sin(CK.i);
 
     // Position transformation
-    CC.pos.x = float( (cosO * coso - sinO * sino * cosi) * x_P + (-cosO * sino - sinO * coso * cosi) * y_P );
-    CC.pos.y = float( (sinO * coso + cosO * sino * cosi) * x_P + (-sinO * sino + cosO * coso * cosi) * y_P );
-    CC.pos.z = float( (sino * sini) * x_P + (coso * sini) * y_P );
+    CC.pos.x = double( (cosO * coso - sinO * sino * cosi) * x_P + (-cosO * sino - sinO * coso * cosi) * y_P );
+    CC.pos.y = double( (sinO * coso + cosO * sino * cosi) * x_P + (-sinO * sino + cosO * coso * cosi) * y_P );
+    CC.pos.z = double( (sino * sini) * x_P + (coso * sini) * y_P );
 
     // Velocity transformation
-    CC.vel.x = float( (cosO * coso - sinO * sino * cosi) * v_x + (-cosO * sino - sinO * coso * cosi) * v_y );
-    CC.vel.y = float( (sinO * coso + cosO * sino * cosi) * v_x + (-sinO * sino + cosO * coso * cosi) * v_y );
-    CC.vel.z = float( (sino * sini) * v_x + (coso * sini) * v_y );
+    CC.vel.x = double( (cosO * coso - sinO * sino * cosi) * v_x + (-cosO * sino - sinO * coso * cosi) * v_y );
+    CC.vel.y = double( (sinO * coso + cosO * sino * cosi) * v_x + (-sinO * sino + cosO * coso * cosi) * v_y );
+    CC.vel.z = double( (sino * sini) * v_x + (coso * sini) * v_y );
 
     return CC;
 }
 
 
 
-
-// float CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<glm::vec3>& SamplesA, std::vector<glm::vec3>& SamplesB)
-float CapUtil::MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKep& orbitB)
+void CapUtil::TestMinDistanceAlgorithm()
 {
-    const float PI = 3.14159265358979323846264f;
 
-    float best_mA = 0.f, best_mB = 0.f;
-    float minDistSqr = std::numeric_limits<float>::max();
+    double OverallMin = 0;
+    CoordKep BestCoordA, BestCoordB;
 
-    std::vector<float> IterWindow = { 2.f * PI, PI / 6.f, PI / 60.f, PI / 200.f, PI / 800.f, PI / 1000.f, PI / 2000.f, PI / 15000.f, PI / 60000.f, PI / 300000.f };
+    std::vector<vec3> SamplesA;
+    std::vector<vec3> SamplesB;
+
+    for (int i = 0; i < 10000; i++)
+    {
+        SamplesA.clear();
+        SamplesB.clear();
+
+        CoordKep CoordA = { 8000., 0., CapUtil::Deg2Rad(CapUtil::FRand(0., 90.)), CapUtil::Deg2Rad(CapUtil::FRand(0., 90.)), CapUtil::Deg2Rad(CapUtil::FRand(0., 90.)), 0. };
+        CoordKep CoordB = { 8000., 0., CapUtil::Deg2Rad(CapUtil::FRand(0., 90.)), CapUtil::Deg2Rad(CapUtil::FRand(0., 90.)), CapUtil::Deg2Rad(CapUtil::FRand(0., 90.)), 0. };
+
+        double MinDist = CapUtil::MinDistanceBetweenEllipses(
+            CoordA, CoordB
+            // SamplesA,
+            // SamplesB
+        );
+        if (MinDist > OverallMin) {
+            OverallMin = MinDist;
+            BestCoordA = CoordA;
+            BestCoordB = CoordB;
+        }
+    }
+
+
+    std::cout << OverallMin << std::endl;
+    std::cout << CapUtil::Rad2Deg(BestCoordA.i) << "  " << CapUtil::Rad2Deg(BestCoordA.o) << "  " << CapUtil::Rad2Deg(BestCoordA.w) << std::endl;
+    std::cout << CapUtil::Rad2Deg(BestCoordB.i) << "  " << CapUtil::Rad2Deg(BestCoordB.o) << "  " << CapUtil::Rad2Deg(BestCoordB.w) << std::endl;
+    SamplesA.clear();
+    SamplesB.clear();
+    double MinDist2 = CapUtil::MinDistanceBetweenEllipses(
+        BestCoordA, BestCoordB
+        // SamplesA,
+        // SamplesB
+    );
+
+
+    std::ofstream outFile("out_test.csv");
+
+    if (!outFile) {
+        std::cerr << "Error opening file for writing!\n";
+    }
+
+    outFile << "Ax, Ay, Az, Bx, By, Bz\n";
+
+    for (int i = 0; i < SamplesA.size(); i++)
+    {
+        outFile << SamplesA[i].x << ", " << SamplesA[i].y << ", " << SamplesA[i].z << ", " << SamplesB[i].x << ", " << SamplesB[i].y << ", " << SamplesB[i].z << "\n";
+    }
+
+    outFile.close();
+    std::cout << "CSV file written successfully!\n";
+
+}
+
+// double CapUtil::MinDistance(const CoordKep& orbitA, const CoordKep& orbitB, std::vector<vec3>& SamplesA, std::vector<vec3>& SamplesB)
+double CapUtil::MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKep& orbitB)
+{
+    const double PI = 3.14159265358979323846264;
+
+    double best_mA = 0., best_mB = 0.;
+    double minDistSqr = std::numeric_limits<double>::max();
+
+    std::vector<double> IterWindow = { 2. * PI, PI / 6., PI / 60., PI / 200., PI / 800., PI / 1000., PI / 2000., PI / 15000., PI / 60000., PI / 300000. };
 
     for (int Iter = 0; Iter < IterWindow.size(); Iter++)
     {
-        float min_mA = best_mA - IterWindow[Iter] / 2.f;
-        float max_mA = best_mA + IterWindow[Iter] / 2.f;
-        float min_mB = best_mB - IterWindow[Iter] / 2.f;
-        float max_mB = best_mB + IterWindow[Iter] / 2.f;
+        double min_mA = best_mA - IterWindow[Iter] / 2.;
+        double max_mA = best_mA + IterWindow[Iter] / 2.;
+        double min_mB = best_mB - IterWindow[Iter] / 2.;
+        double max_mB = best_mB + IterWindow[Iter] / 2.;
 
 
         const int samples = 16;
-        minDistSqr = std::numeric_limits<float>::max();
+        minDistSqr = std::numeric_limits<double>::max();
 
-        std::vector<std::tuple<glm::vec3, float>> pointsA;
+        std::vector<std::tuple<vec3, double>> pointsA;
         for (int i = 0; i <= samples; ++i)
         {
             CoordKep sampleA = orbitA;
-            sampleA.m = min_mA + (max_mA - min_mA) * (float)i / (float)samples;
-            glm::vec3 posA = CapUtil::CK_to_CC(sampleA).pos;
+            sampleA.m = min_mA + (max_mA - min_mA) * (double)i / (double)samples;
+            vec3 posA = CapUtil::CK_to_CC(sampleA).pos;
             pointsA.push_back({ posA, sampleA.m });
             // SamplesA.push_back(posA);
         }
-        std::vector<std::tuple<glm::vec3, float>> pointsB;
+        std::vector<std::tuple<vec3, double>> pointsB;
         for (int i = 0; i <= samples; ++i)
         {
             CoordKep sampleB = orbitB;
-            sampleB.m = min_mB + (max_mB - min_mB) * (float)i / (float)samples;
-            glm::vec3 posB = CapUtil::CK_to_CC(sampleB).pos;
+            sampleB.m = min_mB + (max_mB - min_mB) * (double)i / (double)samples;
+            vec3 posB = CapUtil::CK_to_CC(sampleB).pos;
             pointsB.push_back({ posB, sampleB.m });
             // SamplesB.push_back(posB);
         }
 
-        for (const std::tuple<glm::vec3, float>& posA : pointsA)
+        for (const std::tuple<vec3, double>& posA : pointsA)
         {
-            for (const std::tuple<glm::vec3, float>& posB : pointsB)
+            for (const std::tuple<vec3, double>& posB : pointsB)
             {
-                glm::vec3 dif = std::get<glm::vec3>(posA) - std::get<glm::vec3>(posB);
-                float distSqr = glm::dot(dif, dif);
+                vec3 dif = std::get<vec3>(posA) - std::get<vec3>(posB);
+                double distSqr = glm::dot(dif, dif);
 
                 if (distSqr < minDistSqr)
                 {
                     minDistSqr = distSqr;
-                    best_mA = std::get<float>(posA);
-                    best_mB = std::get<float>(posB);
+                    best_mA = std::get<double>(posA);
+                    best_mB = std::get<double>(posB);
                 }
             }
         }
