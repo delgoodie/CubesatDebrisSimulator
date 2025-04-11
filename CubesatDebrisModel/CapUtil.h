@@ -15,6 +15,11 @@ struct CoordKep {
     double w = 0;
     double m = 0;
 
+    double& operator[](int Index)
+    {
+        return ((double*)(this))[Index];
+    }
+
     bool Equals(const CoordKep& Other) 
     {
         return abs(a - Other.a) < .001 && abs(e - Other.e) < .0001 && abs(i - Other.i) < .0001 && abs(o - Other.o) < .0001 && abs(w - Other.w) < .0001 && abs(m - Other.m) < .0001;

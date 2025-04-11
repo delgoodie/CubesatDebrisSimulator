@@ -17,7 +17,7 @@ DebrisList::~DebrisList()
 {
     if (num > 0)
     {
-        std::cout << "~DebrisList num = " << num << std::endl;
+        // std::cout << "~DebrisList num = " << num << std::endl;
     }
 }
 

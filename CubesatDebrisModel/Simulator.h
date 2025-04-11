@@ -15,8 +15,6 @@ private:
 	double Duration; // s
 
 
-
-
 public:
 	int DetectionCount;
 
@@ -29,7 +27,10 @@ public:
 	void CullDebrisByMinDistance();
 	void Run();
 
+private:
+	void SimulateDebrisCubesatPair(const Debris& debris);
 
+public:
 	DebrisList& GetDebrisList() {
 		return debrisList;
 	}

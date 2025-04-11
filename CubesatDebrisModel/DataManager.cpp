@@ -9,12 +9,19 @@
 #include <random>
 #include <cmath>
 #include <regex>
+#include <chrono>
 
 using json = nlohmann::json;
-
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::duration;
+using std::chrono::milliseconds;
 
 void DataManager::WriteData_bin(const char* FileName, DebrisList& debrisList)
 {
+    std::cout << "Writing binary data to (n=" << debrisList.num << ")  " << FileName << std::endl;
+    auto t1 = high_resolution_clock::now();
+
     std::ofstream outFile(FileName, std::ios::binary);
     if (!outFile) 
     {
@@ -23,10 +30,17 @@ void DataManager::WriteData_bin(const char* FileName, DebrisList& debrisList)
     }
     outFile.write(reinterpret_cast<const char*>(debrisList.GetRawData()), debrisList.num * sizeof(Debris));
     outFile.close();
+
+    auto t2 = high_resolution_clock::now();
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << "Finished write binary data to " << FileName << "  size = " << int(debrisList.num * sizeof(Debris)) / 1000 << "kb   in " << double(ms_int.count()) / 1000. << " s " << std::endl;
 }
 
 void DataManager::WriteData_csv(const char* FileName, DebrisList& debrisList)
 {
+    std::cout << "Writing csv data to (n=" << debrisList.num << ")  " << FileName << std::endl;
+    auto t1 = high_resolution_clock::now();
+
     std::ofstream outFile(FileName);
 
     if (!outFile) {
@@ -42,7 +56,10 @@ void DataManager::WriteData_csv(const char* FileName, DebrisList& debrisList)
     }
 
     outFile.close();
-    std::cout << "CSV file written successfully!\n";
+
+    auto t2 = high_resolution_clock::now();
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << "Finished write csv data to " << FileName << "in " << double(ms_int.count()) / 1000. << " s " << std::endl;
 }
 
 DebrisList DataManager::FetchMocatData_csv(const char* FileName)
@@ -175,6 +192,9 @@ DebrisList DataManager::FetchLeoData_json(const char* FileName)
 
 DebrisList DataManager::FetchData_bin(const char* FileName)
 {
+    std::cout << "Fetching binary data from " << FileName << std::endl;
+    auto t1 = high_resolution_clock::now();
+
     std::ifstream inFile(FileName, std::ios::binary);
     if (!inFile) {
         std::cerr << "Error opening file for reading!\n";
@@ -208,11 +228,23 @@ DebrisList DataManager::FetchData_bin(const char* FileName)
         debrisList[i].rcs = debrisListF[i].rcs;
     }
     */
+
+    auto t2 = high_resolution_clock::now();
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << "Fetched binary data from " << FileName << "  num = " << debrisList.num << " in " << double(ms_int.count()) / 1000. << " s " << std::endl;
+
     return debrisList;
 }
 
 DebrisList DataManager::FetchData_csv(const char* FileName)
 {
+    std::error_code ec;
+    size_t fileSize = std::filesystem::file_size(FileName, ec);
+    int EstimatedDebris = fileSize / 65;
+    
+    std::cout << "Fetching csv data from " << FileName << "  estimating " << EstimatedDebris << " debris" << std::endl;
+    auto total_t1 = high_resolution_clock::now();
+
     std::ifstream file(FileName);
     if (!file.is_open()) {
         std::cerr << "Error opening file" << std::endl;
@@ -223,6 +255,7 @@ DebrisList DataManager::FetchData_csv(const char* FileName)
 
     std::string line;
     int LineNumber = -1;
+    auto t1 = high_resolution_clock::now();
     while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string cell;
@@ -231,37 +264,24 @@ DebrisList DataManager::FetchData_csv(const char* FileName)
 
         if (LineNumber == 0) continue;
 
+        if ((LineNumber % (EstimatedDebris / 100)) == 0)
+        {
+            auto t2 = high_resolution_clock::now();
+            auto ms_int = duration_cast<milliseconds>(t2 - t1);
+
+            int Percent = LineNumber / (EstimatedDebris / 100.0);
+
+            std::cout << "Load csv iter " << LineNumber << "  ("  << Percent << "%)  " << double(ms_int.count()) / 1000. << " s " << std::endl;
+            t1 = high_resolution_clock::now();
+        }
+
         Debris debris;
 
-        int col = 0;
-        while (std::getline(ss, cell, ',')) 
+        for (int i = 0; i < 7; i++)
         {
-            /*
-            std::regex number_regex("-*\d*\.*\d*");
-            auto words_begin = std::sregex_iterator(cell.begin(), cell.end(), number_regex);
-            auto words_end = std::sregex_iterator();
-
-            double Value = 0;
-            for (std::sregex_iterator i = words_begin; i != words_end; ++i)
-            {
-                std::smatch match = *i;
-                std::string match_str = match.str();
-                Value = std::stod(match_str);
-                break;
-            }
-            */
-
+            std::getline(ss, cell, ',');
             double Value = std::stod(cell);
-
-            if (col == 0) debris.coord.a = Value;
-            else if (col == 1) debris.coord.e = Value;
-            else if (col == 2) debris.coord.i = Value;
-            else if (col == 3) debris.coord.o = Value;
-            else if (col == 4) debris.coord.w = Value;
-            else if (col == 5) debris.coord.m = Value;
-            else if (col == 6) debris.rcs = Value;
-
-            col++;
+            debris.coord[i] = Value;
         }
 
         debrisVec.push_back(debris);
@@ -275,6 +295,10 @@ DebrisList DataManager::FetchData_csv(const char* FileName)
     {
         debrisList[i] = debrisVec[i];
     }
+
+    auto total_t2 = high_resolution_clock::now();
+    auto total_ms_int = duration_cast<milliseconds>(total_t2 - total_t1);
+    std::cout << "Fetched csv data from " << FileName << "  num = " << debrisList.num << " in " << double(total_ms_int.count()) / 1000. << " s " << std::endl;
 
     return debrisList;
 }
