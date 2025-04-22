@@ -11,6 +11,8 @@ public:
 	double TransmitAntennaGainFactor; // dbi
 	double Frequency; // Hhz
 	double Wavelength; // m
+	double SystemLoss; // Factor;
+
 
 	CoordKep coord;
 

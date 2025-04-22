@@ -128,4 +128,7 @@ public:
     {
         return  Min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX / (Max - Min)));
     }
+
+
+    static vec3 GetSunDirection(int dayOfYear);
 };

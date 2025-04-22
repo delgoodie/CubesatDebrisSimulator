@@ -355,3 +355,16 @@ double CapUtil::MinDistanceBetweenEllipses(const CoordKep& orbitA, const CoordKe
     }
     return sqrt(minDistSqr);
 }
+
+vec3 CapUtil::GetSunDirection(int dayOfYear)
+{
+    const double deg2rad = 3.14159265 / 180.0;
+    const double epsilon = 23.44 * deg2rad; // obliquity
+    const double theta = 2.0 * 3.14159265 * (dayOfYear - 80) / 365.25;
+
+    double x = cos(theta);
+    double y = cos(epsilon) * sin(theta);
+    double z = sin(epsilon) * sin(theta);
+
+    return glm::normalize(vec3(x, y, z));
+}

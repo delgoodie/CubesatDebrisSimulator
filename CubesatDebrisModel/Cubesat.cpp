@@ -16,5 +16,8 @@ Cubesat::Cubesat()
 
 
 	coord = { 6928, 0, CapUtil::Deg2Rad(37.556), CapUtil::Deg2Rad(200), 0, 0 };
+
+	SystemLoss = 2; // best case 3dB
+
 	// CapUtil::CC_to_CK({ vec3(2000., 0., 0.), vec3(0., 7.5, 0.) });
 }

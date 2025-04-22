@@ -40,7 +40,33 @@ int main()
     // DebrisList debrisList = dataManager.FetchData_bin(culledBinDataFileName);
     // DebrisList debrisList = dataManager.FetchData_bin(culledBinDataFileName);
     // DebrisList debrisList = dataManager.FetchData_csv(culledCsvDataFileName);
-    DebrisList debrisList = dataManager.FetchData_csv(RScriptCsvData);
+    // DebrisList debrisList = dataManager.FetchData_csv(RScriptCsvData);
+
+    std::vector<int> DetectionCounts;
+    for (int i = 0; i < 10; i++)
+    {
+        std::string culledIterCsvDataFileName = std::string("Raw Data/CulledLeoGenData") + std::to_string(i) + std::string(".csv");
+        std::string culledIterBinDataFileName = std::string("Raw Data/CulledLeoGenData") + std::to_string(i) + std::string(".bin");
+        // DebrisList debrisList = dataManager.GenData_Leo(120e6);
+        DebrisList debrisList = dataManager.FetchData_bin(culledIterBinDataFileName.c_str());
+
+        Simulator simulator;
+        simulator.SetDebris(std::move(debrisList));
+        // simulator.CullDebrisByIntersection();
+        // dataManager.WriteData_bin(culledIterBinDataFileName.c_str(), simulator.GetDebrisList());
+        // dataManager.WriteData_csv(culledIterCsvDataFileName.c_str(), simulator.GetDebrisList());
+        
+        simulator.Run();
+        DetectionCounts.push_back(simulator.DetectionCount);
+    }
+
+    std::cout << "Detections: ";
+    for (int i = 0; i < DetectionCounts.size(); i++)
+    {
+        std::cout << DetectionCounts[i] << ", ";
+    }
+    std::cout << std::endl;
+
 
     // DebrisList debrisList = dataManager.GenData_Leo(120e6);
     // dataManager.WriteData_bin(binDataFileName, debrisList);
@@ -51,13 +77,13 @@ int main()
     // dataManager.WriteData_bin(culledBinDataFileName , debrisList);
 
 
-    Simulator simulator;
-    simulator.SetDebris(std::move(debrisList));
-    simulator.CullDebrisByMinDistance();
-    dataManager.WriteData_bin(culledBinDataFileName, simulator.GetDebrisList());
-    dataManager.WriteData_csv(culledCsvDataFileName, simulator.GetDebrisList());
+    // Simulator simulator;
+    // simulator.SetDebris(std::move(debrisList));
+    // simulator.CullDebrisByMinDistance();
+    // dataManager.WriteData_bin(culledBinDataFileName, simulator.GetDebrisList());
+    // dataManager.WriteData_csv(culledCsvDataFileName, simulator.GetDebrisList());
 
-    simulator.Run();
+    // simulator.Run();
 
     auto t2 = high_resolution_clock::now();
     auto s_int = duration_cast<seconds>(t2 - t1);

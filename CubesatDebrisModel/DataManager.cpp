@@ -264,7 +264,7 @@ DebrisList DataManager::FetchData_csv(const char* FileName)
 
         if (LineNumber == 0) continue;
 
-        if ((LineNumber % (EstimatedDebris / 100)) == 0)
+        if (EstimatedDebris > 100 && (LineNumber % (EstimatedDebris / 100)) == 0)
         {
             auto t2 = high_resolution_clock::now();
             auto ms_int = duration_cast<milliseconds>(t2 - t1);
@@ -351,7 +351,7 @@ DebrisList DataManager::GenData_Leo(int Num)
 
     for (int i = 0; i < Num; i++)
     {
-        if ((i % (Num / 100)) == 0) 
+        if (Num > 100 && (i % (Num / 100)) == 0) 
         {
             std::cout << i << "..." << std::endl;
         }

@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubesat.h"
 
-
+#include <optional>
 
 
 class Simulator
@@ -25,10 +25,14 @@ public:
 	void SetDebris(DebrisList InDebrisList) { debrisList = std::move(InDebrisList); }
 
 	void CullDebrisByMinDistance();
+	void CullDebrisByIntersection();
 	void Run();
 
 private:
-	void SimulateDebrisCubesatPair(const Debris& debris);
+	std::optional<double> FindDebrisCubesatPairIntersectionTime(const Debris& debris);
+	void SimulateDebrisCubesatPair(const Debris& debris, double StartTime);
+
+	std::vector<double> GenerateTemperatureField(double TimeStep);
 
 public:
 	DebrisList& GetDebrisList() {
